@@ -12,7 +12,17 @@ public class TestUserDTO {
 
     private boolean isLogged;
 
+    private String profileImage;
+
     private String role;
+
+    public String getProfileImage() {
+        return profileImage;
+    }
+
+    public void setProfileImage(String profileImage) {
+        this.profileImage = profileImage;
+    }
 
     public String getRole() {
         return role;
@@ -46,13 +56,13 @@ public class TestUserDTO {
         this.userName = userName;
     }
 
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
+//    public String getPassword() {
+//        return password;
+//    }
+//
+//    public void setPassword(String password) {
+//        this.password = password;
+//    }
 
     public boolean getIsLogged() {
         return isLogged;

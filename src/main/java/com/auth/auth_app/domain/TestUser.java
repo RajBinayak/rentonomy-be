@@ -27,6 +27,9 @@ public class TestUser {
     @Column(name = "role")
     private String role;
 
+    @Column(name = "profile_image")
+    private String profileImage;
+
     public String getId() {
         return id;
     }
@@ -73,5 +76,13 @@ public class TestUser {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public String getProfileImage() {
+        return profileImage;
+    }
+
+    public void setProfileImage(String profileImage) {
+        this.profileImage = profileImage;
     }
 }
