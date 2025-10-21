@@ -2,6 +2,7 @@ package com.auth.auth_app.resource;
 
 import com.auth.auth_app.domain.TestUser;
 import com.auth.auth_app.dto.TestUserDTO;
+import com.auth.auth_app.security.UserPrincipal;
 import com.auth.auth_app.service.TestUserService;
 import com.auth.auth_app.service.TokenBlacklistService;
 import com.auth.auth_app.util.JwtTokenProvider;
@@ -9,6 +10,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -38,19 +40,33 @@ public class LoginResource {
     private TokenBlacklistService tokenBlacklistService;
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody TestUserDTO testUserDTO) {
-        log.info("check payload {}", testUserDTO.toString());
+    public ResponseEntity<?> login(@RequestBody TestUser testUser) {
+        log.info("check payload {}", testUser.toString());
         try {
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
-                            testUserDTO.getUserName(),
-                            testUserDTO.getPassword()
+                            testUser.getUserName(),
+                            testUser.getPassword()
                     )
             );
             String token = jwtTokenProvider.generateToken(authentication);
-            return ResponseEntity.ok(Map.of("token", token));
+            UserPrincipal userPrincipal = (UserPrincipal) authentication.getPrincipal();
+            TestUser user = userPrincipal.getUser();
+            user.setPassword(null);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.add(HttpHeaders.AUTHORIZATION, "Bearer " + token);
+
+            return ResponseEntity
+                    .ok()
+                    .headers(headers)
+                    .body(user);
+
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
+            log.error("Login failed: {}", e.getMessage());
+            return ResponseEntity
+                    .status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("error", "Invalid credentials"));
         }
     }
 
@@ -69,12 +85,23 @@ public class LoginResource {
     }
 
     @PostMapping("/create/user")
-    public ResponseEntity<?> createUser(@RequestBody TestUserDTO testUserDTO) {
+    public ResponseEntity<?> createUser(@RequestBody TestUser testUser) {
         try {
-            testUserService.save(testUserDTO);
+            testUserService.save(testUser);
             return ResponseEntity.status(HttpStatus.CREATED).body("User created successfully");
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.OK).body(e.getMessage());
+        }
+    }
+
+    @PatchMapping("/edit/user")
+    public ResponseEntity<TestUserDTO> editUser(@RequestBody TestUserDTO testUserDTO) {
+        TestUserDTO editedUserDTO = new TestUserDTO();
+        try {
+            editedUserDTO = testUserService.editUser(testUserDTO);
+            return ResponseEntity.ok().body(editedUserDTO);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(editedUserDTO);
         }
     }
 
